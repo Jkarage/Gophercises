@@ -14,15 +14,15 @@ func main() {
 	if len(roots) == 0 {
 		roots = []string{"."}
 	}
-	fileSize := make(chan int64)
+	fileSizes := make(chan int64)
 	go func() {
 		for _, root := range roots {
-			walkDir(root, fileSize)
+			walkDir(root, fileSizes)
 		}
-		close(fileSize)
+		close(fileSizes)
 	}()
 
-	printDiskUsage(fileSize)
+	printDiskUsage(fileSizes)
 }
 
 func walkDir(dir string, fileSizes chan int64) {
@@ -49,10 +49,10 @@ func dirents(dir string) []fs.DirEntry {
 	return entries
 }
 
-func printDiskUsage(fileSize chan int64) {
+func printDiskUsage(fileSizes chan int64) {
 	var nfiles, nbytes int64
 
-	for nbyte := range fileSize {
+	for nbyte := range fileSizes {
 		nfiles++
 		nbytes += nbyte
 	}
