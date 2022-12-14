@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 )
 
 type problems struct {
@@ -13,7 +14,8 @@ type problems struct {
 }
 
 func main() {
-	filename := flag.String("filename", "problems.csv", "A problems file in csv format")
+	filename := flag.String("f", "problems.csv", "A problems file in csv format")
+	timer := flag.Int("t", 30, "A timer for the quiz")
 	flag.Parse()
 
 	f, err := os.Open(*filename)
@@ -28,16 +30,9 @@ func main() {
 		panic(err)
 	}
 	p := parseRecords(records)
-	var correct int
-	for i, v := range p {
-		var answer string
-		fmt.Printf("Problem No %d: %v\n", i, v.q)
-		fmt.Scanf("%s", &answer)
-		if answer == v.a {
-			correct++
-		}
-	}
-	fmt.Printf("Got %d correct out of %v", correct, len(p))
+	c := time.NewTimer(time.Duration(*timer) * time.Second)
+	correct := start(p, c)
+	fmt.Printf("Got %d out of %v", correct, len(p))
 }
 
 func parseRecords(a [][]string) []problems {
@@ -49,4 +44,26 @@ func parseRecords(a [][]string) []problems {
 		}
 	}
 	return r
+}
+
+func start(p []problems, c *time.Timer) int {
+	var correct int
+	for i, v := range p {
+		fmt.Printf("Problem No %d: %v\n", i, v.q)
+		answerChan := make(chan string)
+		go func() {
+			var answer string
+			fmt.Scanf("%s", &answer)
+			answerChan <- answer
+		}()
+		select {
+		case <-c.C:
+			return correct
+		case answer := <-answerChan:
+			if answer == v.a {
+				correct++
+			}
+		}
+	}
+	return correct
 }
