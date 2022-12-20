@@ -15,7 +15,18 @@ func main() {
 		"/serve": "https://alinker.tk",
 	}
 	mapHandler := handlers.MapHandler(pathsToUrl, mux)
-	http.ListenAndServe(":8080", mapHandler)
+
+	yaml := `
+- path: /urlshort
+  url: https://github.com/gophercises/urlshort
+- path: /urlshort-final
+  url: https://github.com/gophercises/urlshort/tree/solution
+`
+	yamlHandler, err := handlers.YamlHandler([]byte(yaml), mapHandler)
+	if err != nil {
+		panic(err)
+	}
+	http.ListenAndServe(":8080", yamlHandler)
 }
 
 func hello(w http.ResponseWriter, r *http.Request) {
